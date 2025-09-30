@@ -1,3 +1,5 @@
+package com.ats;
+
 import org.apache.tika.Tika;
 
 import javax.swing.*;
