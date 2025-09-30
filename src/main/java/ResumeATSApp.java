@@ -31,36 +31,57 @@ public class ResumeATSApp extends JFrame {
 
     public ResumeATSApp() {
         setTitle("Resume Parser & ATS Scorer");
-        setSize(600, 500);
+        setSize(700, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        setContentPane(mainPanel);
 
         // Resume display area (non-editable)
         resumeTextArea = new JTextArea(10, 40);
         resumeTextArea.setEditable(false);
         JScrollPane resumeScroll = new JScrollPane(resumeTextArea);
-        add(resumeScroll, BorderLayout.NORTH);
+        resumeScroll.setBorder(BorderFactory.createTitledBorder("Resume Text"));
+        mainPanel.add(resumeScroll, BorderLayout.NORTH);
 
         // Job description input area
         jobDescriptionTextArea = new JTextArea(5, 40);
         jobDescriptionTextArea.setText("Enter job description here...");
+        jobDescriptionTextArea.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (jobDescriptionTextArea.getText().equals("Enter job description here...")) {
+                    jobDescriptionTextArea.setText("");
+                }
+            }
+        });
         JScrollPane jobDescScroll = new JScrollPane(jobDescriptionTextArea);
-        add(jobDescScroll, BorderLayout.CENTER);
+        jobDescScroll.setBorder(BorderFactory.createTitledBorder("Job Description"));
+        mainPanel.add(jobDescScroll, BorderLayout.CENTER);
 
-        // Upload resume button
+        // Buttons and score label panel
+        JPanel sidePanel = new JPanel();
+        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         uploadResumeButton = new JButton("Upload Resume");
+        uploadResumeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         uploadResumeButton.addActionListener(this::handleUploadResume);
-        add(uploadResumeButton, BorderLayout.WEST);
+        sidePanel.add(uploadResumeButton);
 
-        // Submit button for calculating ATS score
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
         submitButton = new JButton("Calculate ATS Score");
+        submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         submitButton.addActionListener(this::handleCalculateScore);
-        add(submitButton, BorderLayout.SOUTH);
+        sidePanel.add(submitButton);
 
-        // Label to display ATS score
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
         atsScoreLabel = new JLabel("ATS Score: 0%", JLabel.CENTER);
-        add(atsScoreLabel, BorderLayout.EAST);
+        atsScoreLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        atsScoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidePanel.add(atsScoreLabel);
+
+        mainPanel.add(sidePanel, BorderLayout.EAST);
     }
 
     private void handleUploadResume(ActionEvent e) {
@@ -69,13 +90,21 @@ public class ResumeATSApp extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             String parsedText = parseResume(file.getAbsolutePath());
-            resumeTextArea.setText(parsedText);
+            if (parsedText.startsWith("Error")) {
+                JOptionPane.showMessageDialog(this, parsedText, "Parsing Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                resumeTextArea.setText(parsedText);
+            }
         }
     }
 
     private void handleCalculateScore(ActionEvent e) {
         String resumeText = resumeTextArea.getText();
         String jobDescription = jobDescriptionTextArea.getText();
+        if (resumeText.isBlank() || jobDescription.isBlank() || jobDescription.equals("Enter job description here...")) {
+            JOptionPane.showMessageDialog(this, "Please upload a resume and enter a job description.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         int atsScore = calculateScore(resumeText, jobDescription);
         atsScoreLabel.setText("ATS Score: " + atsScore + "%");
     }
@@ -87,9 +116,8 @@ public class ResumeATSApp extends JFrame {
             File file = new File(filePath);
             return tika.parseToString(file);
         } catch (IOException | org.apache.tika.exception.TikaException e) {
-            e.printStackTrace();
+            return "Error parsing resume: " + e.getMessage();
         }
-        return "Error parsing resume!";
     }
 
     // Extract keywords from text excluding stop words and very short words
