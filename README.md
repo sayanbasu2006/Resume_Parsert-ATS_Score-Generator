@@ -35,5 +35,4 @@ This project is a Java Swing application that parses resumes and calculates ATS 
 - Add fuzzy matching using Apache Commons Text for improved scoring.
 - Integrate MySQL to store parsed resumes and scores.
 
-## License
-MIT
+Made By Sayan, Rashal and Akshat.
